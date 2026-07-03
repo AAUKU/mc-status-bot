@@ -1,5 +1,9 @@
 import logging
 import os
+import logging
+from telegram import Update
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
+import os
 from dotenv import load_dotenv
 
 # هذا السطر سيجعل البوت لا يتوقف إذا لم يجد الملف
