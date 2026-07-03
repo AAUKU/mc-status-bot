@@ -1,10 +1,22 @@
 import os
 import logging
+import threading
+from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler
 from mcstatus import JavaServer
 
-# إعدادات
+# --- إعدادات الخادم الوهمي لإرضاء Render ---
+app = Flask(__name__)
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_web():
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
+# --- إعدادات البوت ---
 logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = int(os.getenv("CHAT_ID"))
@@ -13,7 +25,7 @@ SERVER_PORT = int(os.getenv("SERVER_PORT", 25565))
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 60))
 
 last_message_id = None
-last_status = None # لتخزين الحالة السابقة
+last_status = None
 
 def get_server_info():
     try:
@@ -33,7 +45,6 @@ async def check_server(context: ContextTypes.DEFAULT_TYPE):
     global last_message_id, last_status
     text, is_online = get_server_info()
     
-    # تحديث الرسالة المثبتة
     if last_message_id:
         try:
             await context.bot.edit_message_text(chat_id=CHAT_ID, message_id=last_message_id, text=text)
@@ -45,7 +56,6 @@ async def check_server(context: ContextTypes.DEFAULT_TYPE):
         last_message_id = msg.message_id
         await context.bot.pin_chat_message(chat_id=CHAT_ID, message_id=last_message_id)
 
-    # تنبيه ذكي عند تغير الحالة
     if last_status is not None and last_status != is_online:
         await context.bot.send_message(chat_id=CHAT_ID, text=f"⚠️ تنبيه: حالة السيرفر تغيرت! \n{text}")
     
@@ -75,9 +85,12 @@ async def ping_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("لا يمكن الوصول للسيرفر.")
 
 def main():
+    # 1. تشغيل الخادم الوهمي في خلفية
+    threading.Thread(target=run_web, daemon=True).start()
+    
+    # 2. تشغيل البوت
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    # إضافة الأوامر
     application.add_handler(CommandHandler("status", status_cmd))
     application.add_handler(CommandHandler("players", players_cmd))
     application.add_handler(CommandHandler("ping", ping_cmd))
