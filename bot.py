@@ -1,10 +1,13 @@
 import os
-import asyncio
-import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from mcstatus import BedrockServer
 from dotenv import load_dotenv
+
+# هذا السطر سيجعل البوت لا يتوقف إذا لم يجد الملف
+load_dotenv(override=True) 
+
+# الآن، اجعل البوت يقرأ المتغيرات مباشرة من نظام Render
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
+
 
 # إعداد السجلات (Logging) لمتابعة أي أخطاء في Console
 logging.basicConfig(
